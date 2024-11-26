@@ -94,94 +94,107 @@ def predict(data_loader, model):
                 output = torch.cat((output, y_star), 0)
         
         return output
-
+from sklearn.metrics import mean_squared_error    
+import numpy as np
+def calculate_mse(actual, predicted):
+    """
+    Calculate Mean Squared Error (MSE) between actual and predicted values.
+    Args:
+        actual (array-like): Ground truth values.
+        predicted (array-like): Predicted values.
+    Returns:
+        float: Mean Squared Error (MSE).
+    """
+    # return mean_squared_error(actual, predicted)
+    actual, predicted = np.array(actual), np.array(predicted)
+    # 避免除以零的情况
+    non_zero_indices = actual != 0
+    actual = actual[non_zero_indices]
+    predicted = predicted[non_zero_indices]
+    
+    mape = np.mean(np.abs((actual - predicted) / actual)) * 100
+    return mape
+    
+    
 def Mycost(X):
-    # from Factory import ShallowRegressionLSTM
-    from sklearn.metrics import mean_squared_error
+    from Factory import ShallowRegressionLSTM
+    
+    learning_rate = X[0]
+    num_hidden_units = int(X[1])
+    
+    model = ShallowRegressionLSTM(num_sensors=len(features), hidden_units=num_hidden_units)
+    loss_function = nn.MSELoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    classical_loss_train = []
+    classical_loss_test = []
+    print("Untrained test\n--------")
+    test_loss = test_model(test_loader, model, loss_function)
+    print()
+    classical_loss_test.append(test_loss)
+
+    for ix_epoch in range(5):
+        print(f"Epoch {ix_epoch}\n---------")
+        train_loss = train_model(train_loader, model, loss_function, optimizer=optimizer)
+        test_loss = test_model(test_loader, model, loss_function)
+        print()
+        classical_loss_train.append(train_loss)
+        classical_loss_test.append(test_loss)
+
+
+    train_eval_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
+
+    ystar_col = "Model forecast"
+    df_train[ystar_col] = predict(train_eval_loader, model).numpy()
+    df_test[ystar_col] = predict(test_loader, model).numpy()
+
+    df_out = pd.concat((df_train, df_test))[[target, ystar_col]]
+
+    for c in df_out.columns:
+        df_out[c] = df_out[c] * target_stdev + target_mean
+    mse = calculate_mse(df_out[target], df_out[ystar_col])
+    print(df_out)
+    print(f"mape {mse}\n---------")
+    return mse
+    # from Factory import QShallowRegressionLSTM
+    # import time
     # learning_rate = X[0]
     # num_hidden_units = int(X[1])
-    def calculate_mse(actual, predicted):
-        """
-        Calculate Mean Squared Error (MSE) between actual and predicted values.
-        Args:
-            actual (array-like): Ground truth values.
-            predicted (array-like): Predicted values.
-        Returns:
-            float: Mean Squared Error (MSE).
-        """
-        return mean_squared_error(actual, predicted)
 
-    # model = ShallowRegressionLSTM(num_sensors=len(features), hidden_units=num_hidden_units)
+    # Qmodel = QShallowRegressionLSTM(num_sensors=len(features), hidden_units=num_hidden_units, n_qubits=4)
     # loss_function = nn.MSELoss()
-    # optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-    # classical_loss_train = []
-    # classical_loss_test = []
+    # optimizer = torch.optim.Adam(Qmodel.parameters(), lr=learning_rate)
+
+    # quantum_loss_train = []
+    # quantum_loss_test = []
     # print("Untrained test\n--------")
-    # test_loss = test_model(test_loader, model, loss_function)
-    # print()
-    # classical_loss_test.append(test_loss)
+    # start = time.time()
+    # test_loss = test_model(test_loader, Qmodel, loss_function)
+    # end = time.time()
+    # print("Execution time", end - start)
+    # quantum_loss_test.append(test_loss)
 
     # for ix_epoch in range(20):
     #     print(f"Epoch {ix_epoch}\n---------")
-    #     train_loss = train_model(train_loader, model, loss_function, optimizer=optimizer)
-    #     test_loss = test_model(test_loader, model, loss_function)
-    #     print()
-    #     classical_loss_train.append(train_loss)
-    #     classical_loss_test.append(test_loss)
-
-
+    #     start = time.time()
+    #     train_loss = train_model(train_loader, Qmodel, loss_function, optimizer=optimizer)
+    #     test_loss = test_model(test_loader, Qmodel, loss_function)
+    #     end = time.time()
+    #     print("Execution time", end - start)
+    #     quantum_loss_train.append(train_loss)
+    #     quantum_loss_test.append(test_loss)
+        
     # train_eval_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
 
-    # ystar_col = "Model forecast"
-    # df_train[ystar_col] = predict(train_eval_loader, model).numpy()
-    # df_test[ystar_col] = predict(test_loader, model).numpy()
+    # ystar_col_Q = "Model forecast"
+    # df_train[ystar_col_Q] = predict(train_eval_loader, Qmodel).numpy()
+    # df_test[ystar_col_Q] = predict(test_loader, Qmodel).numpy()
 
-    # df_out = pd.concat((df_train, df_test))[[target, ystar_col]]
+    # df_out_Q = pd.concat((df_train, df_test))[[target, ystar_col_Q]]
 
-    # for c in df_out.columns:
-    #     df_out[c] = df_out[c] * target_stdev + target_mean
-    # mse = calculate_mse(df_out[target], df_out[ystar_col])
-    # print(df_out)
-    from Factory import QShallowRegressionLSTM
-    import time
-    learning_rate = X[0]
-    num_hidden_units = int(X[1])
-
-    Qmodel = QShallowRegressionLSTM(num_sensors=len(features), hidden_units=num_hidden_units, n_qubits=4)
-    loss_function = nn.MSELoss()
-    optimizer = torch.optim.Adam(Qmodel.parameters(), lr=learning_rate)
-
-    quantum_loss_train = []
-    quantum_loss_test = []
-    print("Untrained test\n--------")
-    start = time.time()
-    test_loss = test_model(test_loader, Qmodel, loss_function)
-    end = time.time()
-    print("Execution time", end - start)
-    quantum_loss_test.append(test_loss)
-
-    for ix_epoch in range(20):
-        print(f"Epoch {ix_epoch}\n---------")
-        start = time.time()
-        train_loss = train_model(train_loader, Qmodel, loss_function, optimizer=optimizer)
-        test_loss = test_model(test_loader, Qmodel, loss_function)
-        end = time.time()
-        print("Execution time", end - start)
-        quantum_loss_train.append(train_loss)
-        quantum_loss_test.append(test_loss)
+    # for c in df_out_Q.columns:
+    #     df_out_Q[c] = df_out_Q[c] * target_stdev + target_mean
         
-    train_eval_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False)
-
-    ystar_col_Q = "Model forecast"
-    df_train[ystar_col_Q] = predict(train_eval_loader, Qmodel).numpy()
-    df_test[ystar_col_Q] = predict(test_loader, Qmodel).numpy()
-
-    df_out_Q = pd.concat((df_train, df_test))[[target, ystar_col_Q]]
-
-    for c in df_out_Q.columns:
-        df_out_Q[c] = df_out_Q[c] * target_stdev + target_mean
-        
-    mse = calculate_mse(df_out_Q[target], df_out_Q[ystar_col_Q])
-    print(df_out_Q)
-    return mse
+    # mse = calculate_mse(df_out_Q[target], df_out_Q[ystar_col_Q])
+    # print(df_out_Q)
+    # return mse
         

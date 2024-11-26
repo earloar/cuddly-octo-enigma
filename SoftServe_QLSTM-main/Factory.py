@@ -61,7 +61,7 @@ class QLSTM(nn.Module):
                 batch_first=True,
                 return_sequences=False, 
                 return_state=False,
-                backend="default.qubit"):
+                backend="lightning.gpu"):
         super(QLSTM, self).__init__()
         self.n_inputs = input_size
         self.hidden_size = hidden_size

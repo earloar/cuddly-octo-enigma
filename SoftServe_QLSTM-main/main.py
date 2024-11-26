@@ -3,9 +3,9 @@ import pandas as pd
 import matplotlib.pyplot as plt  # 添加此行
 import numpy as np
 
-noP = 20
+noP = 10
 noV = 2
-Max_iteration = 20
+Max_iteration = 10
 gBest, gBestScore, fitness_values = BQPSO(noP, noV, Max_iteration)
 print(gBest)
 print(gBestScore)

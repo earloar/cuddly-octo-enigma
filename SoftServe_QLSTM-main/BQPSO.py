@@ -30,8 +30,8 @@ def BQPSO(N, dim, max_it):
             delta_theta = delta_theta[sorted_indices]
         # 声明松鼠在不同树上的分布
         n1 = 1  # 山核桃树上的松鼠数量
-        n2 = 3  # 橡树上的松鼠数量
-        n3 = 16   # 普通树上的松鼠数量
+        n2 = 2  # 橡树上的松鼠数量
+        n3 = 7   # 普通树上的松鼠数量
         g_c = 1.9
         theta = theta_max - ((theta_max - theta_min) * (it / max_it))
         for i in range(n1, N):
@@ -67,10 +67,11 @@ def BQPSO(N, dim, max_it):
         X = Qobservation(Qbit, N, dim)
         fitness = np.array([Mycost(X[aa]) for aa in range(N)])
         sorted_indices = np.argsort(fitness)
+        fitness = fitness[sorted_indices]
         Qbit = Qbit[sorted_indices]
         delta_theta = delta_theta[sorted_indices]
         X = X[sorted_indices]
-        best_fitness_values.append(Mycost(X[0]))
-        print(X[0], Mycost(X[0]), best_fitness_values)
+        best_fitness_values.append(fitness[0])
+        print(X[0], fitness[0], best_fitness_values)
 
-    return X[0], Mycost(X[0]), best_fitness_values
+    return X[0], best_fitness_values[0], best_fitness_values
